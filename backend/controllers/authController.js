@@ -13,7 +13,10 @@ const generateToken = (payload) =>
     }
   );
 
+// =====================================================
 // STUDENT SELF-REGISTRATION
+// =====================================================
+
 exports.registerStudent = async (req, res) => {
   try {
     const {
@@ -64,7 +67,67 @@ exports.registerStudent = async (req, res) => {
   }
 };
 
-// LOGIN — admin, coordinator, student
+
+// =====================================================
+// TEMPORARY - CREATE ADMIN
+// =====================================================
+
+exports.createAdmin = async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      password,
+    } = req.body;
+
+    // Check whether admin/email already exists
+    const existing = await User.findOne({
+      email,
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        message: "Email already registered",
+      });
+    }
+
+    // Hash password
+    const hashed = await bcrypt.hash(
+      password,
+      10
+    );
+
+    // Create admin
+    const admin = await User.create({
+      name,
+      email,
+      password: hashed,
+      role: "admin",
+      isApproved: true,
+    });
+
+    res.status(201).json({
+      message: "Admin created successfully",
+
+      admin: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+
+// =====================================================
+// LOGIN — ADMIN, COORDINATOR, STUDENT
+// =====================================================
+
 exports.login = async (req, res) => {
   try {
     const {
@@ -72,7 +135,9 @@ exports.login = async (req, res) => {
       password,
     } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({
+      email,
+    });
 
     if (!user) {
       return res.status(404).json({
